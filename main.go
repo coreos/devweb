@@ -46,6 +46,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -78,6 +79,14 @@ func main() {
 	log.Fatal(http.ListenAndServe(*addr, http.HandlerFunc(relay)))
 }
 
+func stripRawQuery(url string) string {
+	i := strings.Index(url, "?")
+	if i < 0 {
+		return url
+	}
+	return url[0:i]
+}
+
 func relay(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -95,6 +104,8 @@ func relay(w http.ResponseWriter, req *http.Request) {
 	outreq := new(http.Request)
 	*outreq = *req // includes shallow copies of maps, but okay
 
+
+	outreq.URL.Opaque = stripRawQuery(req.RequestURI)
 	outreq.Proto = "HTTP/1.1"
 	outreq.ProtoMajor = 1
 	outreq.ProtoMinor = 1
